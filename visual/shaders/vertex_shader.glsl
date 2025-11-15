@@ -1,10 +1,12 @@
 #version 330
 
-in vec2 vert;
+in float x;
 
+uniform float pos;
 uniform mat4 projection;
-uniform mat4 model;
+uniform float hz;
 
 void main() {
-    gl_Position = projection * model * vec4(vert, 0.0, 1.0);
+    float y = 0.2f * sin((x+pos)*hz);
+    gl_Position = projection * vec4(x, y, 0.0, 1.0);
 }

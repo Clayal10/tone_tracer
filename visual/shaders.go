@@ -2,10 +2,31 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
+
+func setupProgram() (uint32, error) {
+	path, _ := filepath.Abs(vertexShaderPath)
+	vertexShader, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	path, _ = filepath.Abs(fragmentShaderPath)
+	fragmentShader, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+
+	program, err := newProgram(string(vertexShader), string(fragmentShader))
+	if err != nil {
+		return 0, err
+	}
+	return program, nil
+}
 
 func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)

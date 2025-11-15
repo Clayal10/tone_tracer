@@ -3,8 +3,6 @@ package main
 import (
 	_ "image/png"
 	"log"
-	"os"
-	"path/filepath"
 	"runtime"
 
 	"github.com/Clayal10/tone_tracer/visual/visual"
@@ -46,18 +44,7 @@ func main() {
 		panic(err)
 	}
 
-	path, _ := filepath.Abs(vertexShaderPath)
-	vertexShader, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	path, _ = filepath.Abs(fragmentShaderPath)
-	fragmentShader, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	program, err := newProgram(string(vertexShader), string(fragmentShader))
+	program, err := setupProgram()
 	if err != nil {
 		panic(err)
 	}
@@ -67,10 +54,6 @@ func main() {
 	projection := mgl32.Ortho(-1, 1, -1, 1, -1, 1)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
-
-	model := mgl32.Ident4()
-	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
@@ -82,16 +65,21 @@ func main() {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	wave := visual.NewWave(numberOfPoints)
+	posUniform := gl.GetUniformLocation(program, gl.Str("pos\x00"))
+	gl.Uniform1f(posUniform, 0)
+	hzUniform := gl.GetUniformLocation(program, gl.Str("hz\x00"))
+	gl.Uniform1f(hzUniform, 0)
+
+	wave := visual.NewWave(numberOfPoints, vao, posUniform, hzUniform)
 
 	var vbo uint32
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, 4*len(wave.Vertices), gl.Ptr(wave.Vertices), gl.STATIC_DRAW)
 
-	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointerWithOffset(vertAttrib, 2, gl.FLOAT, false, 2*4, 0)
+	xAttrib := uint32(gl.GetAttribLocation(program, gl.Str("x\x00")))
+	gl.EnableVertexAttribArray(xAttrib)
+	gl.VertexAttribPointerWithOffset(xAttrib, 1, gl.FLOAT, false, 1*4, 0)
 
 	// Configure global settings
 	gl.Disable(gl.DEPTH_TEST)
@@ -101,15 +89,7 @@ func main() {
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// Render
-		gl.UseProgram(program)
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-
-		gl.BindVertexArray(vao)
-
-		gl.ActiveTexture(gl.TEXTURE0)
-
-		gl.DrawArrays(gl.LINE_STRIP, 0, numberOfPoints)
+		wave.Draw(program)
 
 		// Maintenance
 		window.SwapBuffers()
