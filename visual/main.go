@@ -4,6 +4,7 @@ import (
 	_ "image/png"
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/Clayal10/tone_tracer/visual/visual"
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -86,7 +87,9 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
+	t := time.NewTicker(time.Duration(float64(time.Second) / float64(len(visual.Values))))
 	for !window.ShouldClose() {
+		<-t.C
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		wave.Draw(program)

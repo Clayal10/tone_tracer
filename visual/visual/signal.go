@@ -1,8 +1,6 @@
 package visual
 
 import (
-	"time"
-
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
@@ -10,8 +8,9 @@ type Wave struct {
 	Vertices []float32
 	Samples  int32
 
-	phase float32
-	vao   uint32
+	vao uint32
+
+	index int
 
 	posUniform, hzUniform int32
 }
@@ -30,12 +29,22 @@ func NewWave(samples int32, vao uint32, posUniform, hzUniform int32) *Wave {
 	}
 }
 
+var Values = []float32{
+	0.01, 0.08, 0.13, 0.20, 0.25, 0.21, 0.14, 0.08, 0.01, -0.04, -0.1, -0.18, -0.2, -0.16, -0.11, -0.07, -0.01,
+}
+
+// NOTES:
+//   - ideally, only the right most value will be updated with the new value and all others will just
+//     'shift' to the left
+//   - Would essentially need to know the next (to the right) value.
 func (w *Wave) Draw(program uint32) {
-	w.phase += float32(float64(time.Second) / 1e9)
+	length := len(Values)
+	y := Values[w.index%length]
+	w.index++
 
 	gl.UseProgram(program)
 	// When we have data, we can just pass it through here.
-	gl.Uniform1f(w.posUniform, w.phase)
+	gl.Uniform1f(w.posUniform, y)
 	gl.Uniform1f(w.hzUniform, 60)
 
 	gl.BindVertexArray(w.vao)
